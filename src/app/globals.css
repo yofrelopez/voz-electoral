@@ -11,3 +11,22 @@
 body {
   font-family: var(--font-sans), sans-serif;
 }
+
+/* Remove default mobile tap highlight */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Remove Recharts SVG focus outlines and strokes applied on click */
+.recharts-wrapper *:focus,
+.recharts-surface:focus,
+.recharts-rectangle:focus,
+.recharts-bar-rectangle:focus {
+  outline: none !important;
+}
+
+/* Force remove any active stroke that might be added on tap */
+path:focus, 
+rect:focus {
+  outline: none !important;
+}

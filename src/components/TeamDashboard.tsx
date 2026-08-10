@@ -87,10 +87,18 @@ export function TeamDashboard({ equipo, partido, ubicacion }: { equipo: any[], p
       const blob = await (await fetch(dataUrl)).blob();
       const file = new File([blob], `radiografia-${partido || "lista"}.png`, { type: "image/png" });
 
+      // Copiar enlace al portapapeles como respaldo
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+      } catch (e) {
+        console.log("No se pudo copiar al portapapeles automáticamente");
+      }
+
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           title: "Radiografía Electoral",
-          text: `Mira la radiografía de la lista de ${partido || "este partido"}`,
+          text: `Mira la radiografía de la lista de ${partido || "este partido"}\n\n${window.location.href}`,
+          url: window.location.href,
           files: [file]
         });
       } else {

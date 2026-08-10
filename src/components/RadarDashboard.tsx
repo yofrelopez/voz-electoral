@@ -55,9 +55,18 @@ export function RadarDashboard({ data }: { data: any[] }) {
       if (share && navigator.share) {
         const blob = await (await fetch(dataUrl)).blob();
         const file = new File([blob], `radar-electoral.png`, { type: 'image/png' });
+        
+        // Copiar enlace al portapapeles como respaldo
+        try {
+          await navigator.clipboard.writeText(window.location.href);
+        } catch (e) {
+          console.log("No se pudo copiar al portapapeles automáticamente");
+        }
+
         await navigator.share({
           title: 'Radar Electoral',
-          text: 'Mira el ranking de partidos políticos en Voz Electoral 2026',
+          text: `Mira el ranking de partidos políticos en Voz Electoral 2026\n\n${window.location.href}`,
+          url: window.location.href,
           files: [file]
         });
       } else {
@@ -74,11 +83,30 @@ export function RadarDashboard({ data }: { data: any[] }) {
   };
 
   const CustomTooltip = ({ active, payload, label }: any) => {
+    const stopEvent = (e: any) => {
+      e.stopPropagation();
+      if (e.nativeEvent && e.nativeEvent.stopImmediatePropagation) {
+        e.nativeEvent.stopImmediatePropagation();
+      }
+    };
+
     if (active && payload && payload.length) {
       if (activeTab === "movilizacion") {
         const total = payload.reduce((acc: number, item: any) => acc + (item.value || 0), 0);
         return (
-          <div className="bg-slate-900 text-white p-3 rounded-lg shadow-xl text-xs sm:text-sm border border-slate-700 max-w-[200px] sm:min-w-[200px] whitespace-normal">
+          <div 
+            onPointerDown={stopEvent}
+            onPointerMove={stopEvent}
+            onPointerUp={stopEvent}
+            onTouchStart={stopEvent}
+            onTouchMove={stopEvent}
+            onTouchEnd={stopEvent}
+            onMouseDown={stopEvent}
+            onMouseMove={stopEvent}
+            onMouseUp={stopEvent}
+            onClick={stopEvent}
+            className="bg-slate-900 text-white p-3 rounded-lg shadow-xl text-xs sm:text-sm border border-slate-700 max-w-[200px] sm:min-w-[200px] whitespace-normal"
+          >
             <p className="font-bold mb-2 border-b border-slate-700 pb-2 leading-tight">{label}</p>
             <p className="text-white font-black text-base sm:text-lg mb-2">Total: {total} Listas</p>
             <div className="space-y-1 text-[10px] sm:text-xs">
@@ -104,7 +132,19 @@ export function RadarDashboard({ data }: { data: any[] }) {
       if (activeTab === "sentencias") {
         const data = payload[0].payload;
         return (
-          <div className="bg-slate-900 text-white p-3 rounded-lg shadow-xl text-xs sm:text-sm border border-slate-700 max-w-[220px] sm:max-w-[280px] whitespace-normal">
+          <div 
+            onPointerDown={stopEvent}
+            onPointerMove={stopEvent}
+            onPointerUp={stopEvent}
+            onTouchStart={stopEvent}
+            onTouchMove={stopEvent}
+            onTouchEnd={stopEvent}
+            onMouseDown={stopEvent}
+            onMouseMove={stopEvent}
+            onMouseUp={stopEvent}
+            onClick={stopEvent}
+            className="bg-slate-900 text-white p-3 rounded-lg shadow-xl text-xs sm:text-sm border border-slate-700 max-w-[220px] sm:max-w-[280px] whitespace-normal"
+          >
             <p className="font-bold mb-2 border-b border-slate-700 pb-2 leading-tight text-slate-200">{label}</p>
             <p className="text-white font-black text-base sm:text-lg mb-2 flex items-center gap-1.5">
               <AlertTriangle className="w-4 h-4 text-red-500" />
@@ -201,14 +241,15 @@ export function RadarDashboard({ data }: { data: any[] }) {
         </div>
 
         {/* Chart */}
-        <div style={{ height: chartHeight }} className="w-full transition-all duration-500">
-          <ResponsiveContainer width="100%" height="100%">
+        <div style={{ height: chartHeight, WebkitTapHighlightColor: 'transparent' }} className="w-full transition-all duration-500 [&_.recharts-wrapper]:outline-none [&_.recharts-surface]:outline-none">
+          <ResponsiveContainer width="100%" height="100%" className="outline-none">
             <BarChart
               data={
                 activeTab === "movilizacion" ? topMovilizacion : topSentencias
               }
               layout="vertical"
               margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+              style={{ outline: 'none' }}
             >
               <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
               <XAxis type="number" hide />
@@ -221,7 +262,7 @@ export function RadarDashboard({ data }: { data: any[] }) {
                 width={yAxisWidth}
               />
               <Tooltip 
-                cursor={{ fill: '#f8fafc' }} 
+                cursor={false} 
                 content={<CustomTooltip />} 
                 allowEscapeViewBox={{ x: false, y: true }}
                 wrapperStyle={{ zIndex: 50, pointerEvents: 'auto' }}
@@ -230,9 +271,9 @@ export function RadarDashboard({ data }: { data: any[] }) {
               
               {activeTab === "movilizacion" ? (
                 <>
-                  <Bar dataKey="listasRegionales" name="Lista Regional" stackId="a" fill="#eab308" radius={[0, 0, 0, 0]} barSize={32} />
-                  <Bar dataKey="listasProvinciales" name="Listas Provinciales" stackId="a" fill="#1e3a8a" radius={[0, 0, 0, 0]} barSize={32} />
-                  <Bar dataKey="listasDistritales" name="Listas Distritales" stackId="a" fill="#64748b" radius={[0, 4, 4, 0]} barSize={32} />
+                  <Bar dataKey="listasRegionales" name="Lista Regional" stackId="a" fill="#eab308" radius={[0, 0, 0, 0]} barSize={32} activeBar={false} />
+                  <Bar dataKey="listasProvinciales" name="Listas Provinciales" stackId="a" fill="#1e3a8a" radius={[0, 0, 0, 0]} barSize={32} activeBar={false} />
+                  <Bar dataKey="listasDistritales" name="Listas Distritales" stackId="a" fill="#64748b" radius={[0, 4, 4, 0]} barSize={32} activeBar={false} />
                 </>
               ) : (
                 <Bar 
@@ -240,6 +281,7 @@ export function RadarDashboard({ data }: { data: any[] }) {
                   name="Candidatos con sentencias"
                   radius={[0, 4, 4, 0]} 
                   barSize={32}
+                  activeBar={false}
                 >
                   {
                     topSentencias.map((entry, index) => (

@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/ui/Navbar";
 import { PwaRegister } from "@/components/PwaRegister";
+import { DonationModal } from "@/components/DonationModal";
+import { Heart } from "lucide-react";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -36,6 +38,25 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <PwaRegister />
         <Navbar />
         {children}
+        
+        {/* Support Banner before Footer */}
+        <div className="w-full bg-emerald-50 border-t border-emerald-100 py-10 mt-12">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center flex flex-col items-center">
+            <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-4">
+              <Heart className="w-6 h-6 fill-current" />
+            </div>
+            <h3 className="text-2xl font-black text-slate-800 mb-3">
+              Ayúdanos a mantener este proyecto vivo
+            </h3>
+            <p className="text-sm text-slate-600 max-w-lg mb-6 leading-relaxed">
+              Voz Electoral 2026 es una herramienta independiente creada para democratizar la información. Tu colaboración voluntaria nos permite mantener los servidores activos y libres de publicidad invasiva.
+            </p>
+            <div className="scale-110">
+              <DonationModal />
+            </div>
+          </div>
+        </div>
+
         <footer className="w-full bg-white border-t border-slate-200 mt-auto">
           <div className="max-w-6xl mx-auto px-4 md:px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="text-center md:text-left space-y-1.5">
