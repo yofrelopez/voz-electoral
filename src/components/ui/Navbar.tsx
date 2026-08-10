@@ -29,21 +29,21 @@ export function Navbar() {
         {/* Desktop Menu */}
         <nav className="hidden md:flex items-center gap-4">
           <Link 
-            href="#"
+            href="/radar"
             className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-600 hover:text-brand-red transition-colors relative group"
           >
-            <Target className="h-4 w-4" />
-            <span>Match Electoral</span>
-            <div className="absolute -top-1 -right-2"><Badge variant="destructive" className="scale-75 text-[10px] px-1 py-0">Pronto</Badge></div>
+            <BarChart2 className="h-4 w-4" />
+            <span>Radar de Partidos</span>
+            <div className="absolute -top-1 -right-2"><Badge variant="default" className="bg-brand-red hover:bg-red-700 scale-75 text-[10px] px-1 py-0">Nuevo</Badge></div>
           </Link>
           
           <Link 
             href="#"
             className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors relative group"
           >
-            <BarChart2 className="h-4 w-4" />
-            <span>Sondeos</span>
-            <div className="absolute -top-1 -right-1"><Badge variant="secondary" className="scale-75 text-[10px] px-1 py-0">Pronto</Badge></div>
+            <Target className="h-4 w-4" />
+            <span>Match Electoral</span>
+            <div className="absolute -top-1 -right-2"><Badge variant="secondary" className="scale-75 text-[10px] px-1 py-0">Pronto</Badge></div>
           </Link>
           <div className="ml-2 border-l border-slate-200 pl-4">
             <ShareButton 
@@ -68,22 +68,24 @@ export function Navbar() {
         <div className="md:hidden border-t border-slate-100 bg-white absolute w-full shadow-lg">
           <div className="flex flex-col p-4 space-y-4">
             <Link 
-              href="#"
+              href="/radar"
+              onClick={() => setIsOpen(false)}
               className="flex items-center justify-between text-base font-medium text-slate-600 hover:text-brand-red transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <BarChart2 className="h-5 w-5" />
+                <span>Radar de Partidos</span>
+              </div>
+              <Badge variant="default" className="bg-brand-red text-[10px] px-1.5 py-0">Nuevo</Badge>
+            </Link>
+            <Link 
+              href="#"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center justify-between text-base font-medium text-slate-600 hover:text-slate-900 transition-colors"
             >
               <div className="flex items-center gap-2">
                 <Target className="h-5 w-5" />
                 <span>Match Electoral</span>
-              </div>
-              <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Pronto</Badge>
-            </Link>
-            <Link 
-              href="#"
-              className="flex items-center justify-between text-base font-medium text-slate-600 hover:text-slate-900 transition-colors"
-            >
-              <div className="flex items-center gap-2">
-                <BarChart2 className="h-5 w-5" />
-                <span>Sondeos</span>
               </div>
               <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Pronto</Badge>
             </Link>

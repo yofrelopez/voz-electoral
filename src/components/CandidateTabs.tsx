@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Briefcase, GraduationCap, Building, AlertTriangle, Shield, CheckCircle2, FileText, Users, Download, ChevronRight, ChevronDown, Sparkles } from "lucide-react";
+import { TeamDashboard } from "./TeamDashboard";
 import Link from "next/link";
 import { CandidateImage } from "@/components/CandidateImage";
 import { motion, AnimatePresence } from "framer-motion";
@@ -34,8 +35,43 @@ export function CandidateTabs({
   const sentenciasObligaciones = sentencias?.sentencias_obligaciones || [];
   const tieneSentencias = sentenciasPenales.length > 0 || sentenciasObligaciones.length > 0;
 
-  const equipoDestacado = equipo.slice(0, 2);
-  const equipoResto = equipo.slice(2);
+  const isGobernador = candidato?.cargo?.toUpperCase().includes('GOBERNADOR');
+
+  const destacados = equipo.filter(eq => {
+    const c = eq.cargo?.toUpperCase() || '';
+    return c.includes('VICEGOBERNADOR') || c.includes('TENIENTE ALCALDE');
+  });
+  
+  const titulares = equipo.filter(eq => {
+    const c = eq.cargo?.toUpperCase() || '';
+    return (c.includes('CONSEJERO') || c.includes('REGIDOR')) && !c.includes('ACCESITARIO') && !destacados.includes(eq);
+  });
+
+  let startIndexTitulares = 1;
+  if (!isGobernador && destacados.length === 0 && titulares.length > 0) {
+    const primerRegidor = titulares.shift(); // Extraer el número 1
+    if (primerRegidor) {
+      primerRegidor.cargoManual = "TENIENTE ALCALDE (REGIDOR N° 1)";
+      destacados.push(primerRegidor);
+      startIndexTitulares = 2; // El resto empieza en 2
+    }
+  }
+
+  const accesitarios = equipo.filter(eq => {
+    const c = eq.cargo?.toUpperCase() || '';
+    return c.includes('ACCESITARIO');
+  });
+
+  const formatUbicacion = () => {
+    const cargo = candidato?.cargo?.toUpperCase() || '';
+    const ubi = candidato?.distrito || candidato?.provincia || candidato?.departamento || '';
+    if (!ubi) return '';
+    if (cargo.includes('GOBERNADOR') || cargo.includes('CONSEJERO')) return `Región ${ubi}`;
+    if (cargo.includes('PROVINCIAL')) return `Provincia de ${ubi}`;
+    if (cargo.includes('DISTRITAL')) return `Distrito de ${ubi}`;
+    if (ubi.toUpperCase() === 'LIMA') return 'Región Lima'; // Fallback for Lima just in case
+    return ubi;
+  };
 
   const capitalize = (str: string) => {
     if (!str) return "";
@@ -53,16 +89,16 @@ export function CandidateTabs({
     <div className="w-full space-y-6">
       
       {/* Navegación de Pestañas */}
-      <div className="flex overflow-x-auto hide-scrollbar border-b border-slate-200">
-        <div className="flex space-x-8 px-2">
+      <div className="border-b border-slate-200 w-full">
+        <div className="grid grid-cols-3 w-full">
           <button
             onClick={() => setActiveTab("perfil")}
             className={cn(
-              "pb-4 text-sm font-semibold transition-all relative whitespace-nowrap",
+              "pb-4 text-xs md:text-sm font-semibold transition-all relative whitespace-nowrap text-center",
               activeTab === "perfil" ? "text-brand-red" : "text-slate-500 hover:text-slate-800"
             )}
           >
-            Perfil y Antecedentes
+            Hoja de Vida
             {activeTab === "perfil" && (
               <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-red rounded-t-full" />
             )}
@@ -71,31 +107,32 @@ export function CandidateTabs({
           <button
             onClick={() => setActiveTab("plan")}
             className={cn(
-              "pb-4 text-sm font-semibold transition-all relative whitespace-nowrap flex items-center gap-2",
+              "pb-4 text-xs md:text-sm font-semibold transition-all relative whitespace-nowrap text-center",
               activeTab === "plan" ? "text-brand-red" : "text-slate-500 hover:text-slate-800"
             )}
           >
-            Plan de Gobierno
-            {planGobierno && <span className="bg-brand-red/10 text-brand-red text-[10px] px-1.5 py-0.5 rounded-full">IA</span>}
+            Plan de Gob.
             {activeTab === "plan" && (
               <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-red rounded-t-full" />
             )}
           </button>
 
-          {equipo.length > 0 && (
+          {equipo.length > 0 ? (
             <button
               onClick={() => setActiveTab("equipo")}
               className={cn(
-                "pb-4 text-sm font-semibold transition-all relative whitespace-nowrap flex items-center gap-2",
+                "pb-4 text-xs md:text-sm font-semibold transition-all relative whitespace-nowrap text-center flex justify-center items-center gap-1",
                 activeTab === "equipo" ? "text-brand-red" : "text-slate-500 hover:text-slate-800"
               )}
             >
-              Equipo
-              <span className="bg-slate-100 text-slate-600 text-[10px] px-1.5 py-0.5 rounded-full">{equipo.length}</span>
+              <span>{candidato?.cargo?.toUpperCase().includes('GOBERNADOR') ? 'Consejeros' : 'Regidores'}</span>
+              <span className="bg-slate-100 text-slate-600 text-[9px] md:text-[10px] px-1.5 py-0.5 rounded-full">{equipo.length}</span>
               {activeTab === "equipo" && (
                 <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-red rounded-t-full" />
               )}
             </button>
+          ) : (
+            <div className="pb-4"></div> /* Espaciador si no hay equipo para mantener el grid-cols-3 (opcional, aunque lo ideal es que siempre ocupe el espacio, o si no hay equipo cambiar a cols-2) */
           )}
         </div>
       </div>
@@ -520,61 +557,118 @@ export function CandidateTabs({
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
             >
+              <div className="flex justify-end mb-1 sm:mb-2 -mt-3 sm:mt-1">
+                <TeamDashboard 
+                  equipo={equipo} 
+                  partido={candidato?.partido_politico} 
+                  ubicacion={formatUbicacion()} 
+                />
+              </div>
               <Card className="border-slate-200">
-                <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-4">
-                  <div className="flex items-center gap-2">
-                    <Users className="w-5 h-5 text-slate-600" />
-                    <CardTitle className="text-lg">Equipo en Lista ({equipo.length})</CardTitle>
+                <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-3 pt-4 px-5 flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle className="text-base md:text-lg text-slate-800 flex items-center gap-2">
+                      <Users className="w-4 h-4 md:w-5 md:h-5 text-brand-red" />
+                      {candidato?.cargo?.toUpperCase().includes('GOBERNADOR') ? 'Fórmula y Consejeros' : 'Regidores'}
+                    </CardTitle>
+                    <CardDescription className="text-xs md:text-sm mt-1">
+                      {candidato?.cargo?.toUpperCase().includes('GOBERNADOR') ? 'Candidato a Vicegobernador y lista de Consejeros Regionales.' : 'Lista de candidatos a Regidores (incluyendo Teniente Alcalde).'}
+                    </CardDescription>
                   </div>
-                  <CardDescription>Consejeros regionales, regidores provinciales o distritales.</CardDescription>
+                  <Badge variant="outline" className="bg-white whitespace-nowrap ml-4">
+                    {equipo.length} Total
+                  </Badge>
                 </CardHeader>
-                <CardContent className="pt-6">
+                <CardContent className="p-4 md:p-6 space-y-8">
                   
-                  {/* Miembros Destacados (Top 2) */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                    {equipoDestacado.map((eq: any) => (
-                      <Link key={eq.id_hoja_vida} href={`/candidato/${eq.id_hoja_vida}`}>
-                        <div className="p-4 border border-slate-200 rounded-xl hover:border-brand-red/40 hover:bg-slate-50 hover:shadow-md transition-all flex items-center gap-4 group bg-white">
-                          <CandidateImage 
-                            idHojaVida={eq.id_hoja_vida} 
-                            nombre={eq.nombre_completo}
-                            className="w-12 h-12 rounded-full overflow-hidden bg-slate-100 flex-shrink-0 flex items-center justify-center border border-slate-200 relative"
-                            iconClassName="w-6 h-6"
-                          />
-                          <div className="flex flex-col overflow-hidden">
-                            <span className="text-sm font-bold text-slate-900 truncate group-hover:text-brand-red transition-colors capitalize">{eq.nombre_completo.toLowerCase()}</span>
-                            <span className="text-xs font-medium text-slate-500 truncate bg-slate-100 w-fit px-1.5 py-0.5 rounded mt-1 uppercase">{eq.cargo}</span>
-                          </div>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-
-                  {/* Resto del equipo en Acordeón nativo */}
-                  {equipoResto.length > 0 && (
-                    <details className="group border border-slate-200 rounded-xl overflow-hidden bg-white">
-                      <summary className="flex items-center justify-between p-4 font-medium text-sm cursor-pointer text-slate-700 bg-slate-50 hover:bg-slate-100 transition-colors list-none">
-                        <span>Ver resto de la lista ({equipoResto.length} candidatos)</span>
-                        <span className="transition group-open:rotate-180">
-                          <svg fill="none" height="24" shapeRendering="geometricPrecision" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
-                        </span>
-                      </summary>
-                      <div className="p-4 bg-white border-t border-slate-100">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                          {equipoResto.map((eq: any) => (
-                            <Link key={eq.id_hoja_vida} href={`/candidato/${eq.id_hoja_vida}`}>
-                              <div className="p-2 border border-slate-100 rounded-lg hover:border-slate-300 hover:bg-slate-50 transition-colors flex items-center gap-3 group">
-                                <div className="flex flex-col overflow-hidden">
-                                  <span className="text-xs font-semibold text-slate-800 truncate capitalize">{eq.nombre_completo.toLowerCase()}</span>
-                                  <span className="text-[10px] text-slate-500 truncate">{eq.cargo}</span>
-                                </div>
+                  {/* Destacados (Vicegobernador / Teniente Alcalde) */}
+                  {destacados.length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Fórmula / Principal</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {destacados.map((eq: any) => (
+                          <Link key={eq.id_hoja_vida} href={`/candidato/${eq.id_hoja_vida}`}>
+                            <div className="p-4 border-2 border-brand-red/10 rounded-xl hover:border-brand-red/40 hover:bg-slate-50 transition-all flex items-center gap-4 group bg-white shadow-sm relative overflow-hidden">
+                              <div className="absolute top-0 right-0 bg-brand-red text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-lg">N° 1</div>
+                              <CandidateImage 
+                                idHojaVida={eq.id_hoja_vida} 
+                                nombre={eq.nombre_completo}
+                                className="w-16 h-16 rounded-full overflow-hidden bg-slate-100 flex-shrink-0 flex items-center justify-center border border-slate-200 relative"
+                                iconClassName="w-8 h-8"
+                              />
+                              <div className="flex flex-col overflow-hidden">
+                                <span className="text-sm md:text-base font-bold text-slate-900 truncate group-hover:text-brand-red transition-colors capitalize">{eq.nombre_completo.toLowerCase()}</span>
+                                <span className="text-[10px] font-bold text-brand-red truncate bg-brand-red/5 w-fit px-2 py-0.5 rounded mt-1 uppercase">{eq.cargoManual || eq.cargo}</span>
                               </div>
-                            </Link>
-                          ))}
-                        </div>
+                            </div>
+                          </Link>
+                        ))}
                       </div>
-                    </details>
+                    </div>
                   )}
+
+                  {/* Titulares (Consejeros / Regidores) */}
+                  {titulares.length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Titulares</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {titulares.map((eq: any, index: number) => {
+                          const numero = isGobernador ? index + 1 : index + startIndexTitulares;
+                          return (
+                          <Link key={eq.id_hoja_vida} href={`/candidato/${eq.id_hoja_vida}`}>
+                            <div className="p-3 border border-slate-200 rounded-lg hover:border-brand-red/30 hover:bg-slate-50 transition-colors flex items-center gap-3 group bg-white relative">
+                              <div className="absolute top-0 left-0 bg-slate-100 text-slate-500 text-[10px] font-bold px-1.5 py-0.5 rounded-br-lg rounded-tl-lg group-hover:bg-brand-red/10 group-hover:text-brand-red transition-colors">
+                                N° {numero}
+                              </div>
+                              <CandidateImage 
+                                idHojaVida={eq.id_hoja_vida} 
+                                nombre={eq.nombre_completo}
+                                className="w-12 h-12 rounded-full overflow-hidden bg-slate-100 flex-shrink-0 flex items-center justify-center border border-slate-200 relative mt-2 md:mt-0"
+                                iconClassName="w-5 h-5"
+                              />
+                              <div className="flex flex-col overflow-hidden w-full mt-2 md:mt-0">
+                                <span className="text-xs font-bold text-slate-800 truncate capitalize group-hover:text-brand-red transition-colors">{eq.nombre_completo.toLowerCase()}</span>
+                                <span className="text-[10px] text-slate-500 font-medium truncate uppercase">
+                                  {eq.cargo}
+                                  {eq.cargo?.toUpperCase().includes('CONSEJERO') && eq.provincia ? ` - ${eq.provincia}` : ''}
+                                </span>
+                              </div>
+                            </div>
+                          </Link>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Accesitarios */}
+                  {accesitarios.length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Accesitarios</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {accesitarios.map((eq: any) => (
+                          <Link key={eq.id_hoja_vida} href={`/candidato/${eq.id_hoja_vida}`}>
+                            <div className="p-2 border border-slate-100 rounded-lg hover:border-slate-300 hover:bg-slate-50 transition-colors flex items-center gap-2.5 group bg-slate-50/50 grayscale hover:grayscale-0 opacity-80 hover:opacity-100">
+                              <CandidateImage 
+                                idHojaVida={eq.id_hoja_vida} 
+                                nombre={eq.nombre_completo}
+                                className="w-9 h-9 rounded-full overflow-hidden bg-white flex-shrink-0 flex items-center justify-center border border-slate-200 relative"
+                                iconClassName="w-4 h-4 text-slate-400"
+                              />
+                              <div className="flex flex-col overflow-hidden">
+                                <span className="text-[11px] font-semibold text-slate-700 truncate capitalize">{eq.nombre_completo.toLowerCase()}</span>
+                                <span className="text-[9px] text-slate-400 truncate uppercase">
+                                  {eq.cargo}
+                                  {eq.cargo?.toUpperCase().includes('CONSEJERO') && eq.provincia ? ` - ${eq.provincia}` : ''}
+                                </span>
+                              </div>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
                 </CardContent>
               </Card>
             </motion.div>

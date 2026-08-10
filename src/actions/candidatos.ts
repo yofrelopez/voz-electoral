@@ -160,7 +160,7 @@ export async function getCandidatoById(id: number) {
 export async function getEquipoByExpediente(expediente: string, currentCandidatoId: number) {
   try {
     const { not, and, eq } = await import("drizzle-orm");
-    return await db
+    const results = await db
       .select()
       .from(candidatos)
       .where(
@@ -170,6 +170,31 @@ export async function getEquipoByExpediente(expediente: string, currentCandidato
         )
       )
       .limit(50); // Usually a list has 10-15 people
+      
+    return results.sort((a, b) => {
+      const getRank = (cargo: string | null) => {
+        if (!cargo) return 4;
+        const c = cargo.toUpperCase();
+        if (c.includes('VICEGOBERNADOR') || c.includes('TENIENTE ALCALDE')) return 1;
+        if (c.includes('CONSEJERO') || c.includes('REGIDOR')) {
+          if (c.includes('ACCESITARIO')) return 3;
+          return 2;
+        }
+        if (c.includes('ACCESITARIO')) return 3;
+        return 4;
+      };
+      
+      const rankA = getRank(a.cargo);
+      const rankB = getRank(b.cargo);
+      
+      if (rankA !== rankB) return rankA - rankB;
+      
+      // El JNE guarda la posición oficial en datos_personales.numeroCandidato
+      const numA = (a.datos_personales as any)?.numeroCandidato ?? 999;
+      const numB = (b.datos_personales as any)?.numeroCandidato ?? 999;
+      
+      return numA - numB;
+    });
   } catch (error) {
     console.error("Error getting equipo:", error);
     return [];
