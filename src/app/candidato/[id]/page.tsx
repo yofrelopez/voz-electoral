@@ -26,11 +26,6 @@ export async function generateMetadata(
   return {
     title: titulo,
     description: descripcion,
-    openGraph: {
-      title: titulo,
-      description: descripcion,
-      images: [`/candidato/${params.id}/opengraph-image`],
-    },
   };
 }
 

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/ui/Navbar";
+import { PwaRegister } from "@/components/PwaRegister";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -32,6 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${inter.variable} h-full antialiased font-sans`}
     >
       <body className="min-h-full flex flex-col bg-[#F9FAFB] text-slate-900 selection:bg-brand-red selection:text-white">
+        <PwaRegister />
         <Navbar />
         {children}
         <footer className="w-full bg-white border-t border-slate-200 mt-auto">
