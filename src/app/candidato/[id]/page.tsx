@@ -26,6 +26,18 @@ export async function generateMetadata(
   return {
     title: titulo,
     description: descripcion,
+    openGraph: {
+      title: titulo,
+      description: descripcion,
+      images: [
+        {
+          url: `/candidato/${params.id}/opengraph-image?t=${Date.now()}`,
+          width: 1200,
+          height: 630,
+          type: "image/png",
+        }
+      ],
+    },
   };
 }
 
