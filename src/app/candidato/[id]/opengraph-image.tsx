@@ -12,9 +12,8 @@ export const size = {
 };
 export const contentType = 'image/png';
 
-export default async function Image({ params }: { params: { id: string } }) {
-  // En Next.js 15 los params de layout/page/og son Promise, pero next/og los trata como un objeto directo o promesa.
-  // Es más seguro extraer id por si acaso es asíncrono o síncrono.
+export default async function Image(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const id = params.id;
   
   // Extraer datos del candidato
@@ -37,7 +36,7 @@ export default async function Image({ params }: { params: { id: string } }) {
 
   // Fallback a foto por defecto si no tiene
   const fotoUrl = candidato.foto_url 
-    ? `https://declara.jne.gob.pe/${candidato.foto_url}`
+    ? (candidato.foto_url.startsWith('http') ? candidato.foto_url : `https://declara.jne.gob.pe/${candidato.foto_url}`)
     : 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';
 
   const nombreCompleto = candidato.nombre_completo;

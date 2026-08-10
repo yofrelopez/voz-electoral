@@ -8,13 +8,13 @@
   "theme_color": "#ffffff",
   "icons": [
     {
-      "src": "/logo-cuadrado.png",
+      "src": "/icono-electoral.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/logo-cuadrado.png",
+      "src": "/icono-electoral.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

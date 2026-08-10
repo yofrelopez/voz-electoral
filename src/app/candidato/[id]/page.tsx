@@ -31,7 +31,7 @@ export async function generateMetadata(
       description: descripcion,
       images: [
         {
-          url: `/candidato/${params.id}/opengraph-image?t=${Date.now()}`,
+          url: `/og/candidato/${params.id}.png?t=${Date.now()}`,
           width: 1200,
           height: 630,
           type: "image/png",
