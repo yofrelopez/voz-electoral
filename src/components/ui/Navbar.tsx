@@ -3,13 +3,18 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Badge } from "./Badge";
-import { Target, BarChart2, Menu, X, Share2 } from "lucide-react";
+import { Target, BarChart2, Menu, X, Gamepad2 } from "lucide-react";
 import { useState } from "react";
 import { ShareButton } from "@/components/ShareButton";
 import { DonationModal } from "@/components/DonationModal";
+import { usePathname } from "next/navigation";
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Ocultar Navbar en el juego de Trivia para maximizar el espacio
+  if (pathname === "/trivia") return null;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200/60 bg-white/80 backdrop-blur-md">
@@ -36,6 +41,14 @@ export function Navbar() {
             <BarChart2 className="h-4 w-4" />
             <span>Radar de Partidos</span>
             <div className="absolute -top-1 -right-2"><Badge variant="default" className="bg-brand-red hover:bg-red-700 scale-75 text-[10px] px-1 py-0">Nuevo</Badge></div>
+          </Link>
+          
+          <Link 
+            href="/trivia"
+            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-600 hover:text-brand-red transition-colors relative group"
+          >
+            <Gamepad2 className="h-4 w-4" />
+            <span>Juega la Trivia</span>
           </Link>
           
           <Link 
@@ -78,6 +91,16 @@ export function Navbar() {
               <span>Radar de Partidos</span>
             </div>
             <Badge variant="default" className="bg-brand-red text-[10px] px-1.5 py-0">Nuevo</Badge>
+          </Link>
+          <Link 
+            href="/trivia"
+            onClick={() => setIsOpen(false)}
+            className="flex items-center justify-between text-base font-medium text-slate-600 hover:text-brand-red transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <Gamepad2 className="h-5 w-5" />
+              <span>Juega la Trivia</span>
+            </div>
           </Link>
           <Link 
             href="#"

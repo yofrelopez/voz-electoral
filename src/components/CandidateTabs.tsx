@@ -35,7 +35,7 @@ export function CandidateTabs({
   const sentenciasObligaciones = sentencias?.sentencias_obligaciones || [];
   const tieneSentencias = sentenciasPenales.length > 0 || sentenciasObligaciones.length > 0;
 
-  const isGobernador = candidato?.cargo?.toUpperCase().includes('GOBERNADOR');
+  const isRegional = candidato?.cargo?.toUpperCase().includes('GOBERNADOR') || candidato?.cargo?.toUpperCase().includes('CONSEJERO');
 
   const destacados = equipo.filter(eq => {
     const c = eq.cargo?.toUpperCase() || '';
@@ -48,7 +48,7 @@ export function CandidateTabs({
   });
 
   let startIndexTitulares = 1;
-  if (!isGobernador && destacados.length === 0 && titulares.length > 0) {
+  if (!isRegional && destacados.length === 0 && titulares.length > 0) {
     const primerRegidor = titulares.shift(); // Extraer el número 1
     if (primerRegidor) {
       primerRegidor.cargoManual = "TENIENTE ALCALDE (REGIDOR N° 1)";
@@ -125,7 +125,7 @@ export function CandidateTabs({
                 activeTab === "equipo" ? "text-brand-red" : "text-slate-500 hover:text-slate-800"
               )}
             >
-              <span>{candidato?.cargo?.toUpperCase().includes('GOBERNADOR') ? 'Consejeros' : 'Regidores'}</span>
+              <span>{isRegional ? 'Consejeros' : 'Regidores'}</span>
               <span className="bg-slate-100 text-slate-600 text-[9px] md:text-[10px] px-1.5 py-0.5 rounded-full">{equipo.length}</span>
               {activeTab === "equipo" && (
                 <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-red rounded-t-full" />
@@ -569,10 +569,10 @@ export function CandidateTabs({
                   <div>
                     <CardTitle className="text-base md:text-lg text-slate-800 flex items-center gap-2">
                       <Users className="w-4 h-4 md:w-5 md:h-5 text-brand-red" />
-                      {candidato?.cargo?.toUpperCase().includes('GOBERNADOR') ? 'Fórmula y Consejeros' : 'Regidores'}
+                      {isRegional ? 'Fórmula y Consejeros' : 'Regidores'}
                     </CardTitle>
                     <CardDescription className="text-xs md:text-sm mt-1">
-                      {candidato?.cargo?.toUpperCase().includes('GOBERNADOR') ? 'Candidato a Vicegobernador y lista de Consejeros Regionales.' : 'Lista de candidatos a Regidores (incluyendo Teniente Alcalde).'}
+                      {isRegional ? 'Candidato a Vicegobernador y lista de Consejeros Regionales.' : 'Lista de candidatos a Regidores (incluyendo Teniente Alcalde).'}
                     </CardDescription>
                   </div>
                   <Badge variant="outline" className="bg-white whitespace-nowrap ml-4">
@@ -613,7 +613,7 @@ export function CandidateTabs({
                       <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Titulares</h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         {titulares.map((eq: any, index: number) => {
-                          const numero = isGobernador ? index + 1 : index + startIndexTitulares;
+                          const numero = isRegional ? index + 1 : index + startIndexTitulares;
                           return (
                           <Link key={eq.id_hoja_vida} href={`/candidato/${eq.id_hoja_vida}`}>
                             <div className="p-3 border border-slate-200 rounded-lg hover:border-brand-red/30 hover:bg-slate-50 transition-colors flex items-center gap-3 group bg-white relative">

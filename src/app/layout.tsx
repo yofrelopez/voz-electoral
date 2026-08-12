@@ -5,6 +5,7 @@ import { Navbar } from "@/components/ui/Navbar";
 import { PwaRegister } from "@/components/PwaRegister";
 import { DonationModal } from "@/components/DonationModal";
 import { Heart } from "lucide-react";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -86,6 +87,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </div>
         </footer>
+        <GoogleAnalytics gaId="G-X2647KWJGH" />
       </body>
     </html>
   );

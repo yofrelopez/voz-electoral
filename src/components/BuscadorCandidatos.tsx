@@ -9,6 +9,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { CandidateWealthBadge } from "./CandidateWealthBadge";
 
 type Tab = "REGIONAL" | "PROVINCIAL" | "DISTRITAL";
 
@@ -229,6 +230,10 @@ export function BuscadorCandidatos({ initialData }: { initialData: any[] }) {
                       <div className="hidden w-full h-full items-center justify-center">
                         <User className="w-12 h-12 text-slate-300" />
                       </div>
+                      
+                    {/* Badge de Patrimonio Condicional */}
+                    <CandidateWealthBadge candidato={c} visible={ordenarPatrimonio} />
+
                     {/* Logo Partido Positioned on top */}
                     <div className="absolute top-2 right-2 w-8 h-8 rounded-full shadow-md p-1 flex items-center justify-center overflow-hidden border border-white/40 backdrop-blur-md bg-white/80">
                       <img 

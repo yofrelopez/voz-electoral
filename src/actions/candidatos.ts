@@ -37,11 +37,23 @@ export async function searchCandidatos(query: string = "", conSentencias: boolea
     }
     
     if (ordenarPatrimonio) {
-      // Ordenar calculando patrimonio
+      // Ordenar calculando patrimonio (Ingresos + Muebles + Inmuebles)
       queryBuilder = queryBuilder.orderBy(
         sql`(
-          SELECT COALESCE(SUM((i->>'remuBrutaPublico')::numeric + (i->>'remuBrutaPrivado')::numeric + (i->>'rentaIndividualPublico')::numeric + (i->>'rentaIndividualPrivado')::numeric + (i->>'otroIngresoPublico')::numeric + (i->>'otroIngresoPrivado')::numeric), 0)
-          FROM jsonb_array_elements(COALESCE(${candidatos.bienes_y_rentas}->'ingresos', '[]'::jsonb)) AS i
+          (
+            SELECT COALESCE(SUM((i->>'remuBrutaPublico')::numeric + (i->>'remuBrutaPrivado')::numeric + (i->>'rentaIndividualPublico')::numeric + (i->>'rentaIndividualPrivado')::numeric + (i->>'otroIngresoPublico')::numeric + (i->>'otroIngresoPrivado')::numeric), 0)
+            FROM jsonb_array_elements(COALESCE(${candidatos.bienes_y_rentas}->'ingresos', '[]'::jsonb)) AS i
+          )
+          +
+          (
+            SELECT COALESCE(SUM((m->>'valor')::numeric), 0)
+            FROM jsonb_array_elements(COALESCE(${candidatos.bienes_y_rentas}->'bienes_muebles', '[]'::jsonb)) AS m
+          )
+          +
+          (
+            SELECT COALESCE(SUM((inm->>'autovaluo')::numeric), 0)
+            FROM jsonb_array_elements(COALESCE(${candidatos.bienes_y_rentas}->'bienes_inmuebles', '[]'::jsonb)) AS inm
+          )
         ) DESC NULLS LAST`
       );
     } else {
@@ -92,8 +104,20 @@ export async function getCabezasDeLista(tipo: "REGIONAL" | "PROVINCIAL" | "DISTR
     if (ordenarPatrimonio) {
       queryBuilder = queryBuilder.orderBy(
         sql`(
-          SELECT COALESCE(SUM((i->>'remuBrutaPublico')::numeric + (i->>'remuBrutaPrivado')::numeric + (i->>'rentaIndividualPublico')::numeric + (i->>'rentaIndividualPrivado')::numeric + (i->>'otroIngresoPublico')::numeric + (i->>'otroIngresoPrivado')::numeric), 0)
-          FROM jsonb_array_elements(COALESCE(${candidatos.bienes_y_rentas}->'ingresos', '[]'::jsonb)) AS i
+          (
+            SELECT COALESCE(SUM((i->>'remuBrutaPublico')::numeric + (i->>'remuBrutaPrivado')::numeric + (i->>'rentaIndividualPublico')::numeric + (i->>'rentaIndividualPrivado')::numeric + (i->>'otroIngresoPublico')::numeric + (i->>'otroIngresoPrivado')::numeric), 0)
+            FROM jsonb_array_elements(COALESCE(${candidatos.bienes_y_rentas}->'ingresos', '[]'::jsonb)) AS i
+          )
+          +
+          (
+            SELECT COALESCE(SUM((m->>'valor')::numeric), 0)
+            FROM jsonb_array_elements(COALESCE(${candidatos.bienes_y_rentas}->'bienes_muebles', '[]'::jsonb)) AS m
+          )
+          +
+          (
+            SELECT COALESCE(SUM((inm->>'autovaluo')::numeric), 0)
+            FROM jsonb_array_elements(COALESCE(${candidatos.bienes_y_rentas}->'bienes_inmuebles', '[]'::jsonb)) AS inm
+          )
         ) DESC NULLS LAST`
       );
     } else {
