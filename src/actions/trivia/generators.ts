@@ -169,7 +169,9 @@ export async function generarPreguntaEducacion(nivel: NivelGeografico): Promise<
   .from(candidatos)
   .where(and(
     ...filters,
-    sql`NOT EXISTS (SELECT 1 FROM jsonb_array_elements(COALESCE(${candidatos.formacion_academica}->'educacionUniversitaria', '[]'::jsonb)) AS eu WHERE (eu->>'concluidoEduUni') IN ('1', 'SI', 'si'))`
+    sql`NOT EXISTS (SELECT 1 FROM jsonb_array_elements(COALESCE(${candidatos.formacion_academica}->'educacionUniversitaria', '[]'::jsonb)) AS eu WHERE (eu->>'concluidoEduUni') IN ('1', 'SI', 'si'))
+        AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements(COALESCE(${candidatos.formacion_academica}->'educacionTecnico', '[]'::jsonb)) AS et WHERE (et->>'concluidoEduTecnico') IN ('1', 'SI', 'si'))
+        AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements(COALESCE(${candidatos.formacion_academica}->'educacionNoUniversitaria', '[]'::jsonb)) AS enu WHERE (enu->>'concluidoEduNoUni') IN ('1', 'SI', 'si'))`
   ))
   .orderBy(sql`RANDOM()`)
   .limit(1);
@@ -187,7 +189,9 @@ export async function generarPreguntaEducacion(nivel: NivelGeografico): Promise<
   .from(candidatos)
   .where(and(
     ...filters,
-    sql`EXISTS (SELECT 1 FROM jsonb_array_elements(COALESCE(${candidatos.formacion_academica}->'educacionUniversitaria', '[]'::jsonb)) AS eu WHERE (eu->>'concluidoEduUni') IN ('1', 'SI', 'si'))`,
+    sql`(EXISTS (SELECT 1 FROM jsonb_array_elements(COALESCE(${candidatos.formacion_academica}->'educacionUniversitaria', '[]'::jsonb)) AS eu WHERE (eu->>'concluidoEduUni') IN ('1', 'SI', 'si'))
+        OR EXISTS (SELECT 1 FROM jsonb_array_elements(COALESCE(${candidatos.formacion_academica}->'educacionTecnico', '[]'::jsonb)) AS et WHERE (et->>'concluidoEduTecnico') IN ('1', 'SI', 'si'))
+        OR EXISTS (SELECT 1 FROM jsonb_array_elements(COALESCE(${candidatos.formacion_academica}->'educacionNoUniversitaria', '[]'::jsonb)) AS enu WHERE (enu->>'concluidoEduNoUni') IN ('1', 'SI', 'si')))`,
     ne(candidatos.id_hoja_vida, sinEstudios[0].id)
   ))
   .orderBy(sql`RANDOM()`)
@@ -202,13 +206,23 @@ export async function generarPreguntaEducacion(nivel: NivelGeografico): Promise<
       partido: sinEstudios[0].partido,
       foto: sinEstudios[0].foto,
       isCorrect: true,
-      fact: "No registra estudios universitarios concluidos."
+      fact: "No registra estudios superiores (técnicos o universitarios) concluidos."
     },
     ...conEstudios.map(c => {
       const fData: any = c.formacion || {};
       const unis: any[] = fData.educacionUniversitaria || [];
-      const terminada = unis.find((u: any) => String(u.concluidoEduUni) === "1" || String(u.concluidoEduUni).toUpperCase() === "SI");
-      const carrera = terminada ? terminada.carreraUni : "Estudios universitarios";
+      const tecs: any[] = fData.educacionTecnico || [];
+      const nounis: any[] = fData.educacionNoUniversitaria || [];
+      
+      const termUni = unis.find((u: any) => String(u.concluidoEduUni) === "1" || String(u.concluidoEduUni).toUpperCase() === "SI");
+      const termTec = tecs.find((u: any) => String(u.concluidoEduTecnico) === "1" || String(u.concluidoEduTecnico).toUpperCase() === "SI");
+      const termNoUni = nounis.find((u: any) => String(u.concluidoEduNoUni) === "1" || String(u.concluidoEduNoUni).toUpperCase() === "SI");
+      
+      let carrera = "Estudios superiores";
+      if (termUni) carrera = termUni.carreraUni;
+      else if (termTec) carrera = termTec.carreraTecnico;
+      else if (termNoUni) carrera = termNoUni.carreraNoUni;
+
       return {
         id: c.id,
         nombre: c.nombre,
@@ -225,7 +239,7 @@ export async function generarPreguntaEducacion(nivel: NivelGeografico): Promise<
   return {
     id: `educacion-${Date.now()}`,
     type: "educacion",
-    question: `¿Cuál de estos candidatos NO registra estudios universitarios concluidos?`,
+    question: `¿Cuál de estos candidatos NO cuenta con estudios superiores concluidos (técnicos o universitarios)?`,
     options
   };
 }
@@ -260,20 +274,40 @@ export async function generarPreguntaProfesionales(nivel: NivelGeografico): Prom
     miembrosPartido.forEach(m => {
       const fData: any = m.formacion || {};
       const unis: any[] = fData.educacionUniversitaria || [];
-      if (unis.some(u => String(u.concluidoEduUni) === "1" || String(u.concluidoEduUni).toUpperCase() === "SI")) {
+      const tecs: any[] = fData.educacionTecnico || [];
+      const nounis: any[] = fData.educacionNoUniversitaria || [];
+      
+      const tieneSuperiores = 
+        unis.some(u => String(u.concluidoEduUni) === "1" || String(u.concluidoEduUni).toUpperCase() === "SI") ||
+        tecs.some(u => String(u.concluidoEduTecnico) === "1" || String(u.concluidoEduTecnico).toUpperCase() === "SI") ||
+        nounis.some(u => String(u.concluidoEduNoUni) === "1" || String(u.concluidoEduNoUni).toUpperCase() === "SI");
+        
+      if (tieneSuperiores) {
         numProfesionales++;
       }
     });
     return { ...c, numProfesionales };
   });
 
-  equipoStats.sort((a, b) => b.numProfesionales - a.numProfesionales);
+  // Shuffle to randomize who gets to be the winner
+  equipoStats.sort(() => Math.random() - 0.5);
   
-  if (equipoStats[0].numProfesionales === 0) return null;
-  if (equipoStats[0].numProfesionales === equipoStats[1].numProfesionales) return null;
+  let winner = null;
+  let losers: typeof equipoStats = [];
 
-  const winner = equipoStats[0];
-  const losers = equipoStats.slice(1).sort(() => Math.random() - 0.5).slice(0, 2);
+  for (const candidate of equipoStats) {
+    if (candidate.numProfesionales > 0) {
+      const possibleLosers = equipoStats.filter(c => c.id !== candidate.id && c.numProfesionales < candidate.numProfesionales);
+      if (possibleLosers.length >= 2) {
+        winner = candidate;
+        losers = possibleLosers.slice(0, 2);
+        break;
+      }
+    }
+  }
+
+  if (!winner) return null;
+
   const finalOptions = [winner, ...losers];
 
   const equipoNombre = nivel.cargo.includes("GOBERNADOR") ? "consejeros" : "regidores";
@@ -285,7 +319,7 @@ export async function generarPreguntaProfesionales(nivel: NivelGeografico): Prom
     partido: c.partido,
     foto: c.foto,
     isCorrect: c.id === winner.id,
-    fact: c.numProfesionales > 0 ? `Lleva ${c.numProfesionales} profesional(es) en su lista.` : "No registra profesionales universitarios."
+    fact: c.numProfesionales > 0 ? `Lleva ${c.numProfesionales} candidato(s) con estudios superiores (técnicos o universitarios).` : "No registra personas con estudios superiores."
   }));
 
   options.sort(() => Math.random() - 0.5);
@@ -293,7 +327,7 @@ export async function generarPreguntaProfesionales(nivel: NivelGeografico): Prom
   return {
     id: `profesionales-${Date.now()}`,
     type: "profesionales",
-    question: `¿Qué candidato ${cargoStr} tiene más profesionales en su lista de ${equipoNombre}?`,
+    question: `¿Cuál de estos candidatos ${cargoStr} tiene a más personas con estudios superiores (técnicos o universitarios) en su lista de ${equipoNombre}?`,
     options
   };
 }
@@ -336,13 +370,25 @@ export async function generarPreguntaReeleccion(nivel: NivelGeografico): Promise
     return { ...c, numConExperiencia };
   });
 
-  equipoStats.sort((a, b) => b.numConExperiencia - a.numConExperiencia);
+  // Shuffle to randomize who gets to be the winner
+  equipoStats.sort(() => Math.random() - 0.5);
   
-  if (equipoStats[0].numConExperiencia === 0) return null; // Nadie tiene experiencia previa
-  if (equipoStats[0].numConExperiencia === equipoStats[1].numConExperiencia) return null;
+  let winner = null;
+  let losers: typeof equipoStats = [];
 
-  const winner = equipoStats[0];
-  const losers = equipoStats.slice(1).sort(() => Math.random() - 0.5).slice(0, 2);
+  for (const candidate of equipoStats) {
+    if (candidate.numConExperiencia > 0) {
+      const possibleLosers = equipoStats.filter(c => c.id !== candidate.id && c.numConExperiencia < candidate.numConExperiencia);
+      if (possibleLosers.length >= 2) {
+        winner = candidate;
+        losers = possibleLosers.slice(0, 2);
+        break;
+      }
+    }
+  }
+
+  if (!winner) return null;
+
   const finalOptions = [winner, ...losers];
 
   const equipoNombre = nivel.cargo.includes("GOBERNADOR") ? "consejeros" : "regidores";
@@ -361,7 +407,7 @@ export async function generarPreguntaReeleccion(nivel: NivelGeografico): Promise
   return {
     id: `experiencia-${Date.now()}`,
     type: "reeleccion",
-    question: `¿Qué partido lleva en su lista más ${equipoNombre} que ya han ocupado cargos políticos (elección popular) en el pasado?`,
+    question: `¿Cuál de estos partidos lleva en su lista más ${equipoNombre} que ya han ocupado cargos políticos (elección popular) en el pasado?`,
     options
   };
 }
@@ -417,13 +463,25 @@ export async function generarPreguntaJovenes(nivel: NivelGeografico): Promise<Tr
     return { ...c, jovenesCount };
   });
 
-  equipoStats.sort((a, b) => b.jovenesCount - a.jovenesCount);
+  // Shuffle to randomize who gets to be the winner
+  equipoStats.sort(() => Math.random() - 0.5);
   
-  if (equipoStats[0].jovenesCount === 0) return null; // Ningún joven en la lista
-  if (equipoStats[0].jovenesCount === equipoStats[1].jovenesCount) return null; // Empate
+  let winner = null;
+  let losers: typeof equipoStats = [];
 
-  const winner = equipoStats[0];
-  const losers = equipoStats.slice(1).sort(() => Math.random() - 0.5).slice(0, 2);
+  for (const candidate of equipoStats) {
+    if (candidate.jovenesCount > 0) {
+      const possibleLosers = equipoStats.filter(c => c.id !== candidate.id && c.jovenesCount < candidate.jovenesCount);
+      if (possibleLosers.length >= 2) {
+        winner = candidate;
+        losers = possibleLosers.slice(0, 2);
+        break;
+      }
+    }
+  }
+
+  if (!winner) return null;
+
   const finalOptions = [winner, ...losers];
 
   const equipoNombre = nivel.cargo.includes("GOBERNADOR") ? "consejeros" : "regidores";
@@ -442,7 +500,169 @@ export async function generarPreguntaJovenes(nivel: NivelGeografico): Promise<Tr
   return {
     id: `jovenes-${Date.now()}`,
     type: "jovenes",
-    question: `¿Qué candidato apostó más por la juventud y lleva más jóvenes (menores de 30 años) en su lista de ${equipoNombre}?`,
+    question: `¿Cuál de estos candidatos apostó más por la juventud y lleva más jóvenes (menores de 30 años) en su lista de ${equipoNombre}?`,
+    options
+  };
+}
+
+export async function generarPreguntaOcupacion(nivel: NivelGeografico): Promise<TriviaQuestion | null> {
+  const filters = buildGeoFilters(nivel);
+  
+  // Oficios populares (agricultor, obrero, comerciante, transportista, etc.)
+  const oficios = ['%AGRICULTOR%', '%OBRERO%', '%TRANSPORTISTA%', '%CHOFER%', '%COMERCIANTE%', '%ARTESANO%', '%MECANICO%', '%ALBAÑIL%'];
+  
+  // Buscar 1 candidato CON un oficio popular
+  const conOficio = await db.select({
+    id: candidatos.id_hoja_vida,
+    nombre: candidatos.nombre_completo,
+    partido: candidatos.partido_politico,
+    foto: candidatos.foto_url,
+    expLab: candidatos.experiencia_laboral,
+  })
+  .from(candidatos)
+  .where(and(
+    ...filters,
+    sql`EXISTS (
+      SELECT 1 FROM jsonb_array_elements(COALESCE(${candidatos.experiencia_laboral}, '[]'::jsonb)) AS el 
+      WHERE (el->>'ocupacionProfesion') ILIKE ANY (ARRAY[${sql.join(oficios.map(o => sql`${o}`), sql`, `)}])
+    )`
+  ))
+  .orderBy(sql`RANDOM()`)
+  .limit(1);
+
+  if (conOficio.length === 0) return null;
+
+  // Buscar 2 candidatos SIN oficios populares
+  const sinOficio = await db.select({
+    id: candidatos.id_hoja_vida,
+    nombre: candidatos.nombre_completo,
+    partido: candidatos.partido_politico,
+    foto: candidatos.foto_url,
+  })
+  .from(candidatos)
+  .where(and(
+    ...filters,
+    sql`NOT EXISTS (
+      SELECT 1 FROM jsonb_array_elements(COALESCE(${candidatos.experiencia_laboral}, '[]'::jsonb)) AS el 
+      WHERE (el->>'ocupacionProfesion') ILIKE ANY (ARRAY[${sql.join(oficios.map(o => sql`${o}`), sql`, `)}])
+    )`,
+    ne(candidatos.id_hoja_vida, conOficio[0].id)
+  ))
+  .orderBy(sql`RANDOM()`)
+  .limit(2);
+
+  if (sinOficio.length < 2) return null;
+
+  const winner = conOficio[0];
+  const expData: any[] = (winner.expLab as any[]) || [];
+  
+  // Encontrar cuál es el oficio exacto que hizo match
+  let oficioEncontrado = 'Trabajador independiente';
+  for (const exp of expData) {
+    const ocup = (exp.ocupacionProfesion || '').toUpperCase();
+    if (oficios.some(o => ocup.includes(o.replace(/%/g, '')))) {
+      oficioEncontrado = exp.ocupacionProfesion;
+      break;
+    }
+  }
+
+  const options: TriviaOption[] = [
+    {
+      id: winner.id,
+      nombre: winner.nombre,
+      partido: winner.partido,
+      foto: winner.foto,
+      isCorrect: true,
+      fact: `Declaró trabajar como: ${oficioEncontrado}`
+    },
+    ...sinOficio.map(c => ({
+      id: c.id,
+      nombre: c.nombre,
+      partido: c.partido,
+      foto: c.foto,
+      isCorrect: false,
+      fact: `No registra estos oficios en su hoja de vida.`
+    }))
+  ];
+
+  options.sort(() => Math.random() - 0.5);
+  
+  const cargoStr = nivel.cargo.toLowerCase().includes('alcalde') ? 'a la alcaldía' : 'al cargo';
+
+  return {
+    id: `ocupacion-${Date.now()}`,
+    type: 'ocupacion',
+    question: `¿Cuál de estos candidatos ${cargoStr} tiene experiencia laboral trabajando directamente como obrero, agricultor, transportista o comerciante?`,
+    options
+  };
+}
+
+export async function generarPreguntaNivelAcademico(nivel: NivelGeografico): Promise<TriviaQuestion | null> {
+  const filters = buildGeoFilters(nivel);
+  
+  const cands = await db.select({
+    id: candidatos.id_hoja_vida,
+    nombre: candidatos.nombre_completo,
+    partido: candidatos.partido_politico,
+    foto: candidatos.foto_url,
+    formacion: candidatos.formacion_academica,
+  })
+  .from(candidatos)
+  .where(and(...filters))
+  .orderBy(sql`RANDOM()`)
+  .limit(3);
+
+  if (cands.length < 3) return null;
+
+  function getAcademicScore(fData: any) {
+    if (!fData) return { score: 0, desc: "Sin estudios superiores declarados" };
+    
+    const posgrados: any[] = fData.educacionPosgrado || [];
+    const unis: any[] = fData.educacionUniversitaria || [];
+    const tecs: any[] = fData.educacionTecnico || [];
+    
+    const posgTerminado = posgrados.find(p => String(p.concluidoPosgrado).toUpperCase() === 'SI' || String(p.concluidoPosgrado) === '1');
+    if (posgTerminado) return { score: 4, desc: `Posgrado: ${posgTerminado.txEspecialidadPosgrado || 'Concluido'}` };
+    
+    const uniTerminado = unis.find(u => String(u.concluidoEduUni).toUpperCase() === 'SI' || String(u.concluidoEduUni) === '1');
+    if (uniTerminado) return { score: 3, desc: `Universitario: ${uniTerminado.carreraUni || 'Concluido'}` };
+    
+    const tecTerminado = tecs.find(t => String(t.concluidoEduTecnico).toUpperCase() === 'SI' || String(t.concluidoEduTecnico) === '1');
+    if (tecTerminado) return { score: 2, desc: `Técnico: ${tecTerminado.carreraTecnico || 'Concluido'}` };
+    
+    const basica = fData.educacionBasica || {};
+    if (String(basica.concluidoEduSecundaria).toUpperCase() === 'SI' || String(basica.concluidoEduSecundaria) === '1') {
+      return { score: 1, desc: "Secundaria completa" };
+    }
+    
+    return { score: 0, desc: "Primaria / Sin secundaria completa" };
+  }
+
+  const scoredCands = cands.map(c => ({ ...c, ...getAcademicScore(c.formacion) }));
+  
+  // Ordenar de mayor a menor puntaje
+  scoredCands.sort((a, b) => b.score - a.score);
+
+  // Si hay empate en el primer lugar, descartamos (debe haber un ganador único)
+  if (scoredCands[0].score === scoredCands[1].score) return null;
+
+  const winner = scoredCands[0];
+
+  const options: TriviaOption[] = scoredCands.map(c => ({
+    id: c.id,
+    nombre: c.nombre,
+    partido: c.partido,
+    foto: c.foto,
+    isCorrect: c.id === winner.id,
+    fact: `Mayor grado registrado: ${c.desc}`
+  }));
+
+  options.sort(() => Math.random() - 0.5);
+  
+  return {
+    id: `nivelacademico-${Date.now()}`,
+    type: 'nivel_academico',
+    question: `¿Cuál de estos tres candidatos cuenta con el mayor grado de instrucción académica registrado en el JNE?`,
     options
   };
 }

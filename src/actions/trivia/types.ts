@@ -14,7 +14,7 @@ export type TriviaOption = {
   fact: string;
 };
 
-export type TriviaQuestionType = "patrimonio" | "sentencias" | "educacion" | "juventud" | "transfugas" | "profesionales" | "jovenes" | "reeleccion";
+export type TriviaQuestionType = "patrimonio" | "sentencias" | "educacion" | "juventud" | "transfugas" | "profesionales" | "jovenes" | "reeleccion" | "ocupacion" | "nivel_academico";
 
 export type TriviaQuestion = {
   id: string;

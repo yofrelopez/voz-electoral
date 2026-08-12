@@ -199,15 +199,15 @@ export function CandidateTabs({
                 <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
                   <div className="p-4 sm:p-6 text-center">
                     <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">Ingresos Anuales</p>
-                    <p className="text-xl sm:text-2xl font-bold text-slate-900">S/ {totalIngresos.toLocaleString()}</p>
+                    <p className="text-xl sm:text-2xl font-bold text-slate-900">S/ {totalIngresos.toLocaleString('en-US')}</p>
                   </div>
                   <div className="p-4 sm:p-6 text-center">
                     <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">Autos (Muebles)</p>
-                    <p className="text-xl sm:text-2xl font-bold text-slate-900">S/ {totalMuebles.toLocaleString()}</p>
+                    <p className="text-xl sm:text-2xl font-bold text-slate-900">S/ {totalMuebles.toLocaleString('en-US')}</p>
                   </div>
                   <div className="p-4 sm:p-6 text-center">
                     <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">Casas (Inmuebles)</p>
-                    <p className="text-xl sm:text-2xl font-bold text-slate-900">S/ {totalInmuebles.toLocaleString()}</p>
+                    <p className="text-xl sm:text-2xl font-bold text-slate-900">S/ {totalInmuebles.toLocaleString('en-US')}</p>
                   </div>
                 </div>
                 
@@ -220,8 +220,8 @@ export function CandidateTabs({
                     <div className="p-4 bg-white border-t border-slate-100 space-y-3">
                       {bienes?.ingresos?.length > 0 ? bienes.ingresos.map((ing: any, i: number) => (
                         <div key={i} className="text-sm flex flex-col gap-1 pb-3 border-b last:border-0 border-slate-100">
-                          <div className="flex justify-between"><span className="text-slate-500">Sector Público:</span> <span className="font-medium">S/ {((ing.remuBrutaPublico || 0) + (ing.rentaIndividualPublico || 0) + (ing.otroIngresoPublico || 0)).toLocaleString()}</span></div>
-                          <div className="flex justify-between"><span className="text-slate-500">Sector Privado:</span> <span className="font-medium">S/ {((ing.remuBrutaPrivado || 0) + (ing.rentaIndividualPrivado || 0) + (ing.otroIngresoPrivado || 0)).toLocaleString()}</span></div>
+                          <div className="flex justify-between"><span className="text-slate-500">Sector Público:</span> <span className="font-medium">S/ {((ing.remuBrutaPublico || 0) + (ing.rentaIndividualPublico || 0) + (ing.otroIngresoPublico || 0)).toLocaleString('en-US')}</span></div>
+                          <div className="flex justify-between"><span className="text-slate-500">Sector Privado:</span> <span className="font-medium">S/ {((ing.remuBrutaPrivado || 0) + (ing.rentaIndividualPrivado || 0) + (ing.otroIngresoPrivado || 0)).toLocaleString('en-US')}</span></div>
                         </div>
                       )) : <p className="text-sm text-slate-500 italic">No declara ingresos detallados.</p>}
                     </div>
@@ -239,7 +239,7 @@ export function CandidateTabs({
                           <span className="text-slate-600 my-1">{capitalize(inm.inmuebleDireccion)}</span>
                           <div className="flex justify-between mt-1 text-xs">
                             <span className="text-slate-500">Partida: {inm.partidaSunarp || "N/A"}</span>
-                            <span className="font-bold text-brand-red">Valor: S/ {(inm.autovaluo || 0).toLocaleString()}</span>
+                            <span className="font-bold text-brand-red">Valor: S/ {(inm.autovaluo || 0).toLocaleString('en-US')}</span>
                           </div>
                         </div>
                       )) : <p className="text-sm text-slate-500 italic">No declara bienes inmuebles.</p>}
@@ -257,7 +257,7 @@ export function CandidateTabs({
                           <span className="font-bold text-slate-700">{mueb.caracteristica || "Vehículo"}</span>
                           <div className="flex justify-between mt-1 text-xs">
                             <span className="text-slate-500">Placa: {mueb.placa || "N/A"}</span>
-                            <span className="font-bold text-brand-red">Valor: S/ {(mueb.valor || 0).toLocaleString()}</span>
+                            <span className="font-bold text-brand-red">Valor: S/ {(mueb.valor || 0).toLocaleString('en-US')}</span>
                           </div>
                         </div>
                       )) : <p className="text-sm text-slate-500 italic">No declara bienes muebles.</p>}

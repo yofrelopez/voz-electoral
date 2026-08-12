@@ -7,7 +7,9 @@ import {
   generarPreguntaEducacion,
   generarPreguntaProfesionales,
   generarPreguntaJovenes,
-  generarPreguntaReeleccion
+  generarPreguntaReeleccion,
+  generarPreguntaOcupacion,
+  generarPreguntaNivelAcademico
 } from "./generators";
 
 export async function getTriviaSession(nivel: NivelGeografico): Promise<TriviaQuestion[]> {
@@ -16,12 +18,19 @@ export async function getTriviaSession(nivel: NivelGeografico): Promise<TriviaQu
   let intentos = 0;
 
   const allGenerators = [
+    // Preguntas "raras" duplicadas para mayor probabilidad de selección inicial
     { fn: generarPreguntaSentencias, category: 'alerta', deterministic: false, type: 'sentencias' },
+    { fn: generarPreguntaSentencias, category: 'alerta', deterministic: false, type: 'sentencias' },
+    { fn: generarPreguntaOcupacion, category: 'positivo', deterministic: true, type: 'ocupacion' },
+    { fn: generarPreguntaOcupacion, category: 'positivo', deterministic: true, type: 'ocupacion' },
+    
+    // Preguntas estándar
     { fn: generarPreguntaEducacion, category: 'alerta', deterministic: false, type: 'educacion' },
     { fn: generarPreguntaReeleccion, category: 'alerta', deterministic: true, type: 'reeleccion' },
     { fn: generarPreguntaProfesionales, category: 'positivo', deterministic: true, type: 'profesionales' },
     { fn: generarPreguntaJovenes, category: 'positivo', deterministic: true, type: 'jovenes' },
     { fn: generarPreguntaPatrimonio, category: 'neutral', deterministic: false, type: 'patrimonio' },
+    { fn: generarPreguntaNivelAcademico, category: 'positivo', deterministic: false, type: 'nivel_academico' },
   ];
 
   const failedFns = new Set<Function>();
@@ -29,15 +38,15 @@ export async function getTriviaSession(nivel: NivelGeografico): Promise<TriviaQu
   while (session.length < 5 && intentos < MAX_INTENTOS) {
     let counts = {
       alerta: session.filter(q => ['sentencias', 'educacion', 'reeleccion'].includes(q.type)).length,
-      positivo: session.filter(q => ['profesionales', 'jovenes'].includes(q.type)).length,
+      positivo: session.filter(q => ['profesionales', 'jovenes', 'ocupacion', 'nivel_academico'].includes(q.type)).length,
       neutral: session.filter(q => ['patrimonio'].includes(q.type)).length,
     };
 
     // Filtramos los generadores que ya fallaron (no hay datos en este distrito)
     let pool = allGenerators.filter(g => !failedFns.has(g.fn));
 
-    // Filtramos los generadores deterministas que ya se usaron (para no repetir la misma pregunta exacta)
-    pool = pool.filter(g => !(g.deterministic && session.some(q => q.type === g.type)));
+    // Filtramos los generadores cuyo tipo ya está en la sesión (para que no se repitan temas)
+    pool = pool.filter(g => !session.some(q => q.type === g.type));
 
     // Lógica de cuotas (Equilibrio Forzado)
     let quotaPool = [];

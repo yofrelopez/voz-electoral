@@ -67,8 +67,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   Voz Electoral 2026
                 </p>
               </div>
-              <p className="text-xs text-slate-500 max-w-sm">
-                Datos públicos extraídos del Jurado Nacional de Elecciones (JNE) y procesados para empoderar al ciudadano.
+              <p className="text-xs text-slate-500 max-w-md leading-relaxed">
+                Datos públicos extraídos del Jurado Nacional de Elecciones (JNE). Si bien nuestro procesamiento es automatizado, la plataforma podría contener errores u omisiones propios de la fuente o del sistema.
+                <br className="mt-1" />
+                ¿Encontraste un dato inexacto? <a href="https://wa.me/51998136138" target="_blank" rel="noopener noreferrer" className="text-brand-red font-semibold hover:underline transition-colors">Repórtalo por WhatsApp aquí</a>.
               </p>
             </div>
             
