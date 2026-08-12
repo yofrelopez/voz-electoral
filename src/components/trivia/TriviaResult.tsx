@@ -1,6 +1,7 @@
 "use client";
 
 import { Share2, RefreshCcw } from "lucide-react";
+import { useState } from "react";
 
 export function TriviaResult({ score, total, onRestart }: { score: number, total: number, onRestart: () => void }) {
   const percentage = score / total;
@@ -21,11 +22,32 @@ export function TriviaResult({ score, total, onRestart }: { score: number, total
   }
 
   const shareText = `Acabo de sacar ${score}/${total} en la Trivia de Verdades Ocultas de mis candidatos en Voz Electoral. ¿Crees que puedes superarme? 🎮🔥 Juega aquí:`;
-  const shareUrl = "https://voz-electoral.pe/trivia"; // Reemplazar con URL real
+  const shareUrl = typeof window !== "undefined" ? window.location.href : "https://voz-electoral.pe/trivia";
 
-  const handleShare = () => {
-    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + " " + shareUrl)}`;
-    window.open(whatsappUrl, "_blank");
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Trivia Electoral 2026",
+          text: shareText,
+          url: shareUrl,
+        });
+        return;
+      } catch (error) {
+        console.log("Error al compartir:", error);
+      }
+    }
+
+    // Fallback: Copy to clipboard
+    try {
+      await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Error al copiar:", err);
+    }
   };
 
   return (
@@ -55,10 +77,10 @@ export function TriviaResult({ score, total, onRestart }: { score: number, total
       <div className="space-y-3">
         <button
           onClick={handleShare}
-          className="group w-full h-12 md:h-14 bg-gradient-to-r from-[#25D366] to-[#1DA851] hover:from-[#20bd5a] hover:to-[#179646] text-white rounded-full font-bold text-sm md:text-lg flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#25D366]/30 hover:shadow-[#25D366]/50 hover:-translate-y-1"
+          className="group w-full h-12 md:h-14 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-full font-bold text-sm md:text-lg flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:-translate-y-1"
         >
           <Share2 className="w-4 h-4 md:w-5 md:h-5 group-hover:scale-110 transition-transform" />
-          Retar por WhatsApp
+          {copied ? "¡Enlace Copiado!" : "Compartir Reto"}
         </button>
         
         <button

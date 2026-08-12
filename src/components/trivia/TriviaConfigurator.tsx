@@ -5,6 +5,7 @@ import { NivelGeografico } from "@/actions/trivia/types";
 import { getDistritosConCandidatos } from "@/actions/candidatos";
 import { MapPin, Building2, Building, PlayCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ShareButton } from "@/components/ShareButton";
 
 type Props = {
   onStart: (nivel: NivelGeografico) => void;
@@ -114,6 +115,14 @@ export function TriviaConfigurator({ onStart }: Props) {
             <PlayCircle className="w-6 h-6" />
             JUGAR AHORA
           </button>
+        </div>
+
+        <div className="flex justify-center pt-2">
+          <ShareButton 
+            title="Trivia Electoral 2026" 
+            text="¿Qué tanto conoces a tus candidatos? Juega a la trivia de Voz Electoral, descubre verdades ocultas y vota informado." 
+            label="Compartir Trivia" 
+          />
         </div>
       </div>
     </div>
